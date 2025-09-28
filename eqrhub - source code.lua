@@ -82,7 +82,7 @@ titleLabel.Name = "Title"
 titleLabel.Size = UDim2.new(1, -40, 0, 40) -- Dostosowany rozmiar tytułu
 titleLabel.Position = UDim2.new(0, 20, 0, 5) -- Trochę niżej
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "EQR Hub"
+titleLabel.Text = "EQR Hub v.1.12F"
 titleLabel.Font = Enum.Font.GothamSemibold -- Font jak w drugim skrypcie
 titleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 titleLabel.TextSize = 20 -- Rozmiar fontu
@@ -774,6 +774,47 @@ local function AutoPickupMoney_Disable()
      -- Optional: Update button visuals immediately if needed
     -- findButtonAndUpdateVisuals("Auto pickup money")
 end
+
+--============================ FullBright ============================--
+local FullBright_Enabled = false
+local FullBright_Connection = nil
+local Lighting = game:GetService("Lighting")
+
+-- Store original lighting properties to restore them later
+local Original_Brightness = Lighting.Brightness
+local Original_ClockTime = Lighting.ClockTime
+local Original_FogEnd = Lighting.FogEnd
+local Original_GlobalShadows = Lighting.GlobalShadows
+local Original_OutdoorAmbient = Lighting.OutdoorAmbient
+
+local function FullBright_Enable()
+    if FullBright_Enabled then
+        return
+    end
+    FullBright_Enabled = true
+
+    -- Apply FullBright settings
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 14
+    Lighting.FogEnd = 100000
+    Lighting.GlobalShadows = false
+    Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+end
+
+local function FullBright_Disable()
+    if not FullBright_Enabled then
+        return
+    end
+    FullBright_Enabled = false
+
+    -- Restore original lighting settings
+    Lighting.Brightness = Original_Brightness
+    Lighting.ClockTime = Original_ClockTime
+    Lighting.FogEnd = Original_FogEnd
+    Lighting.GlobalShadows = Original_GlobalShadows
+    Lighting.OutdoorAmbient = Original_OutdoorAmbient
+end
+
 --============================ Fly ============================--
 local Fly_Enabled = false
 local Fly_Bind = nil
@@ -2188,12 +2229,15 @@ task.spawn(function()
 				print("Autofarm: Found target: " .. target.Name .. ". Teleporting...")
 				
 				if teleportTo(target:WaitForChild("MainPart")) then
-					local success, err = pcall(function()
-						localPlayer.Character.Humanoid:EquipTool(crowbar)
-					end)
-					if not success then
-						task.wait(1)
-						pcall(function() localPlayer.Character.Humanoid:EquipTool(crowbar) end)
+					-- Sprawdź, czy narzędzie nie jest już wyposażone
+					if localPlayer.Character:FindFirstChild("Crowbar") == nil then
+						local success, err = pcall(function()
+							localPlayer.Character.Humanoid:EquipTool(crowbar)
+						end)
+						if not success then
+							task.wait(1)
+							pcall(function() localPlayer.Character.Humanoid:EquipTool(crowbar) end)
+						end
 					end
 					
 					wait(1)
@@ -3048,7 +3092,7 @@ function ESP_Enable()
     if ESP_Loading or ESP_Enabled then return end;
     ESP_Loading=true;
     local success, err=pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/milokoxdxd/testest/refs/heads/main/widocznośćprzezściany", true))();
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/slaby4346-sketch/ee/refs/heads/main/esp", true))();
         ESP_Enabled=true;
         ESP_Loading=false
     end);
@@ -3486,6 +3530,7 @@ local keyBinds = {
     ragebot = nil,
     noFailLockpick = nil,
     safeESP = nil,
+	FullBright = nil,
     openNearbyDoors = nil,
     unlockNearbyDoors = nil -- Ostatni bind
 }
@@ -3523,6 +3568,9 @@ table.insert(categoryFrames.Visuals,
 )
 table.insert(categoryFrames.Visuals,
     createToggleRowFrame("Safe ESP", true, function() return BredMakurz_Enabled end, BredMakurz_Enable, BredMakurz_Disable, function() return keyBinds.safeESP end, function(k) keyBinds.SafeESP=k end)
+)
+table.insert(categoryFrames.Visuals,
+    createToggleRowFrame("Fullbright", true, function() return FullBright_Enabled end, FullBright_Enable, FullBright_Disable, function() return keyBinds.FullBright end, function(k) keyBinds.FullBright=k end)
 )
 
 table.insert(categoryFrames.Farming,
