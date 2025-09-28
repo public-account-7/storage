@@ -82,7 +82,7 @@ titleLabel.Name = "Title"
 titleLabel.Size = UDim2.new(1, -40, 0, 40) -- Dostosowany rozmiar tytułu
 titleLabel.Position = UDim2.new(0, 20, 0, 5) -- Trochę niżej
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "EQR Hub v.1.12F"
+titleLabel.Text = "EQR Hub v.1.19B"
 titleLabel.Font = Enum.Font.GothamSemibold -- Font jak w drugim skrypcie
 titleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 titleLabel.TextSize = 20 -- Rozmiar fontu
@@ -775,46 +775,6 @@ local function AutoPickupMoney_Disable()
     -- findButtonAndUpdateVisuals("Auto pickup money")
 end
 
---============================ FullBright ============================--
-local FullBright_Enabled = false
-local FullBright_Connection = nil
-local Lighting = game:GetService("Lighting")
-
--- Store original lighting properties to restore them later
-local Original_Brightness = Lighting.Brightness
-local Original_ClockTime = Lighting.ClockTime
-local Original_FogEnd = Lighting.FogEnd
-local Original_GlobalShadows = Lighting.GlobalShadows
-local Original_OutdoorAmbient = Lighting.OutdoorAmbient
-
-local function FullBright_Enable()
-    if FullBright_Enabled then
-        return
-    end
-    FullBright_Enabled = true
-
-    -- Apply FullBright settings
-    Lighting.Brightness = 1
-    Lighting.ClockTime = 14
-    Lighting.FogEnd = 100000
-    Lighting.GlobalShadows = false
-    Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
-end
-
-local function FullBright_Disable()
-    if not FullBright_Enabled then
-        return
-    end
-    FullBright_Enabled = false
-
-    -- Restore original lighting settings
-    Lighting.Brightness = Original_Brightness
-    Lighting.ClockTime = Original_ClockTime
-    Lighting.FogEnd = Original_FogEnd
-    Lighting.GlobalShadows = Original_GlobalShadows
-    Lighting.OutdoorAmbient = Original_OutdoorAmbient
-end
-
 --============================ Fly ============================--
 local Fly_Enabled = false
 local Fly_Bind = nil
@@ -871,6 +831,100 @@ local function Fly_Disable()
         Fly_Connection:Disconnect()
         Fly_Connection = nil
     end
+end
+
+
+--============================ FullBright ============================--
+local FullBright_Enabled = false
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+-- Zmienne do przechowywania oryginalnych wartości oświetlenia
+local OriginalValues = {
+	ClockTime = Lighting.ClockTime,
+	Brightness = Lighting.Brightness,
+	Ambient = Lighting.Ambient,
+	OutdoorAmbient = Lighting.OutdoorAmbient,
+	ColorShift_Top = Lighting.ColorShift_Top,
+	FogStart = Lighting.FogStart,
+	FogEnd = Lighting.FogEnd,
+}
+
+local FullBright_Connection = nil
+
+local function FullBright_Enable()
+	if FullBright_Enabled then
+		return
+	end
+	FullBright_Enabled = true
+	
+	-- Natychmiast zastosuj ustawienia FullBright
+	Lighting.Brightness = 5
+	Lighting.ClockTime = 14
+	Lighting.Ambient = Color3.new(1, 1, 1)
+	Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+	Lighting.ColorShift_Top = Color3.new(0, 0, 0)
+	Lighting.FogStart = 100000
+	Lighting.FogEnd = 100000
+
+	-- Uruchom pętlę, która będzie ciągle aplikować te ustawienia
+	FullBright_Connection = RunService.RenderStepped:Connect(function()
+		if not FullBright_Enabled then
+			FullBright_Connection:Disconnect()
+			return
+		end
+		-- Ciągłe sprawdzanie i poprawianie wartości
+		if Lighting.Brightness ~= 5 then Lighting.Brightness = 5 end
+		if Lighting.ClockTime ~= 14 then Lighting.ClockTime = 14 end
+		if Lighting.Ambient ~= Color3.new(1, 1, 1) then Lighting.Ambient = Color3.new(1, 1, 1) end
+		if Lighting.OutdoorAmbient ~= Color3.new(1, 1, 1) then Lighting.OutdoorAmbient = Color3.new(1, 1, 1) end
+		if Lighting.ColorShift_Top ~= Color3.new(0, 0, 0) then Lighting.ColorShift_Top = Color3.new(0, 0, 0) end
+		if Lighting.FogStart ~= 100000 then Lighting.FogStart = 100000 end
+		if Lighting.FogEnd ~= 100000 then Lighting.FogEnd = 100000 end
+	end)
+end
+
+local function FullBright_Disable()
+	if not FullBright_Enabled then
+		return
+	end
+	FullBright_Enabled = false
+	
+	if FullBright_Connection then
+		FullBright_Connection:Disconnect()
+		FullBright_Connection = nil
+	end
+	
+	-- Przywróć oryginalne wartości
+	Lighting.Brightness = OriginalValues.Brightness
+	Lighting.ClockTime = OriginalValues.ClockTime
+	Lighting.Ambient = OriginalValues.Ambient
+	Lighting.OutdoorAmbient = OriginalValues.OutdoorAmbient
+	Lighting.ColorShift_Top = OriginalValues.ColorShift_Top
+	Lighting.FogStart = OriginalValues.FogStart
+	Lighting.FogEnd = OriginalValues.FogEnd
+end
+
+--============================ Camera FOV ============================--
+local Fov_Enabled = false
+local Fov_Value = 80  -- Ustaw domyślną wartość FOV, którą chcesz mieć po włączeniu
+local Camera = game.Workspace.Camera
+local Original_Fov = Camera.FieldOfView
+
+local function Fov_Enable()
+    if Fov_Enabled then
+        return
+    end
+    Fov_Enabled = true
+    Camera.FieldOfView = Fov_Value
+end
+
+local function Fov_Disable()
+    if not Fov_Enabled then
+        return
+    end
+    Fov_Enabled = false
+    Camera.FieldOfView = Original_Fov
 end
 
 --============================ Noclip ============================--
@@ -2177,7 +2231,7 @@ local function openSafe(safeModel)
 		wait(0.2) -- Lekko zwiększone opóźnienie dla stabilności
 	end
 	
-	wait(8) -- Zmniejszony czas oczekiwania po otwarciu sejfu
+	wait(7) -- Zmniejszony czas oczekiwania po otwarciu sejfu
 end
 
 
@@ -3092,7 +3146,7 @@ function ESP_Enable()
     if ESP_Loading or ESP_Enabled then return end;
     ESP_Loading=true;
     local success, err=pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/slaby4346-sketch/ee/refs/heads/main/esp", true))();
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/kskdkdkdmsmdmdm0-dot/lolsjkskf/refs/heads/main/walhaczek", true))();
         ESP_Enabled=true;
         ESP_Loading=false
     end);
@@ -3413,252 +3467,132 @@ local function createActionButtonFrame(labelText, buttonText, actionFunction)
 end
 
 
--------------------------------------------------------------------------------
---  6. Definicje Kategorii i Tworzenie Przycisków Kategorii
--------------------------------------------------------------------------------
-local categories = { "Combat", "Movement", "Visuals", "Farming", "Misc", "Rage" }
-local categoryButtons = {}
-local categoryFrames = {} -- Tabela przechowująca ramki dla każdej kategorii
-local activeCategoryButton = nil
-local defaultCategory = "Combat" -- Możesz zmienić domyślną kategorię
+--[[
+    Poprawiony Skrypt UI - Wersja 2.0
+    Cała logika została umieszczona w jednej tabeli 'EQR_UI', aby uniknąć błędu "Out of local registers"
+    poprzez ograniczenie liczby zmiennych lokalnych w głównym zakresie skryptu.
+    Ta struktura jest bardziej wydajna i zorganizowana.
+]]
 
-local function switchCategory(categoryName)
-    local categoryButton = categoryButtons[categoryName]
-    if not categoryButton or categoryButton == activeCategoryButton then
-        return
-    end
-
-    -- Zresetuj poprzedni aktywny przycisk
-    if activeCategoryButton then
-        TweenService:Create(activeCategoryButton, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(20, 20, 25) }):Play()
-        activeCategoryButton.TextLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
-    end
-
-    -- Ustaw nowy aktywny przycisk
-    TweenService:Create(categoryButton, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(40, 40, 50) }):Play()
-    categoryButton.TextLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-    activeCategoryButton = categoryButton
-
-    -- Wyczyść contentFrame
-    for _, child in ipairs(contentFrame:GetChildren()) do
-        if child:IsA("Frame") and child.Name ~= "UIListLayout" and child.Name ~= "UICorner" then
-            child.Parent = nil -- Usuń z widoku
-        end
-    end
-
-    -- Dodaj ramki z nowej kategorii
-    if categoryFrames[categoryName] then
-        for i, frame in ipairs(categoryFrames[categoryName]) do
-            frame.Parent = contentFrame -- Dodaj do widoku
-            frame.LayoutOrder = i -- Ustaw kolejność dla UIListLayout
-        end
-        -- Zaktualizuj CanvasSize dla przewijania
-        local numItems = #categoryFrames[categoryName]
-        local itemHeight = 35 -- Wysokość jednej ramki (z createToggleRowFrame)
-        local padding = contentLayout.Padding.Offset
-        contentFrame.CanvasSize = UDim2.new(0, 0, 0, numItems * itemHeight + (numItems > 0 and (numItems - 1) * padding or 0) + 10) -- Dodatkowy padding na dole
-    else
-        contentFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Zeruj, jeśli kategoria pusta
-    end
-end
-
--- Tworzenie przycisków kategorii w sidebarze
-for i, categoryName in ipairs(categories) do
-    categoryFrames[categoryName] = {} -- Inicjalizuj pustą listę ramek dla kategorii
-
-    local catButton = Instance.new("TextButton")
-    catButton.Name = categoryName .. "Button"
-    catButton.Size = UDim2.new(1, -10, 0, 30)
-    catButton.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-    catButton.BorderSizePixel = 0
-    catButton.AutoButtonColor = false
-    catButton.LayoutOrder = i
-    catButton.Parent = sidebarFrame
-
-    local catCorner = Instance.new("UICorner")
-    catCorner.CornerRadius = UDim.new(0, 6)
-    catCorner.Parent = catButton
-
-    local catLabel = Instance.new("TextLabel")
-    catLabel.Name = "TextLabel"
-    catLabel.Size = UDim2.new(1, 0, 1, 0)
-    catLabel.BackgroundTransparency = 1
-    catLabel.Text = categoryName
-    catLabel.Font = Enum.Font.GothamSemibold
-    catLabel.TextSize = 14
-    catLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
-    catLabel.Parent = catButton
-
-    -- Animacje i kliknięcie
-    catButton.MouseEnter:Connect(function()
-        if catButton ~= activeCategoryButton then
-            TweenService:Create(catButton, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(30, 30, 35) }):Play()
-        end
-    end)
-    catButton.MouseLeave:Connect(function()
-        if catButton ~= activeCategoryButton then
-            TweenService:Create(catButton, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(20, 20, 25) }):Play()
-        end
-    end)
-    catButton.MouseButton1Click:Connect(function()
-        switchCategory(categoryName)
-    end)
-
-    categoryButtons[categoryName] = catButton -- Zapisz referencję do przycisku
-end
-
+local EQR_UI = {}
 
 -------------------------------------------------------------------------------
---  7. Создаём кнопки в нужном порядке (Oryginalny komentarz)
---     Tworzenie Ramek dla Funkcji i Dodawanie do Kategorii (Używa ORYGINALNYCH funkcji)
+-- 1. WŁAŚCIWOŚCI (Stan i Konfiguracja UI)
 -------------------------------------------------------------------------------
 
--- Lokalne zmienne do przechowywania wartości bindów (dla getterów/setterów)
-local keyBinds = {
-    fly = Fly_Bind, -- Inicjalizuj wartością, jeśli jest potrzebna od razu
+EQR_UI.Categories = { "Combat", "Movement", "Visuals", "Farming", "Misc", "Rage" }
+EQR_UI.CategoryButtons = {}
+EQR_UI.CategoryFrames = {}
+EQR_UI.ActiveCategoryButton = nil
+EQR_UI.DefaultCategory = "Combat"
+
+-- Tabela z keybindami, teraz jako część głównego obiektu UI
+EQR_UI.KeyBinds = {
+    fly = Fly_Bind,
+    fov = fov_Bind,
     noclip = Noclip_Bind,
+    FullBright = FullBright_Bind,
     autofarm = Autofarm_Bind,
     autoPickupMoney = nil,
     adminCheck = nil,
     melee = nil,
     infiniteStamina = nil,
-    noRecoil = nil, -- Zmieniono nazwę z nrBind_local
+    noRecoil = nil,
     esp = nil,
-    aimbot = AimBotSettings.Keybind, -- Pobierz aktualną wartość z ustawień aimbota
+    aimbot = AimBotSettings.Keybind,
     invis = nil,
     antiAFK = nil,
     ragebot = nil,
     noFailLockpick = nil,
     safeESP = nil,
-	FullBright = nil,
     openNearbyDoors = nil,
-    unlockNearbyDoors = nil -- Ostatni bind
+    unlockNearbyDoors = nil
 }
 
--- === Przypisanie ramek do kategorii (Wieloliniowe) ===
-
--- Combat Category
-table.insert(categoryFrames.Combat,
-    createToggleRowFrame("Melee Aura", true, function() return MeleeAura_Enabled end, MeleeAura_Enable, MeleeAura_Disable, function() return keyBinds.melee end, function(k) keyBinds.melee=k end)
-)
-table.insert(categoryFrames.Combat,
-    createToggleRowFrame("Aimbot", true, function() return AimBotSettings.Enabled end, Aimbot_Enable, Aimbot_Disable, function() return keyBinds.aimbot end, function(k) keyBinds.aimbot=k; AimBotSettings.Keybind=k end) -- Nadal aktualizuj AimBotSettings
-)
-table.insert(categoryFrames.Combat,
-    createToggleRowFrame("No Recoil", true, function() return NoRecoil_Enabled end, NoRecoil_Enable, NoRecoil_Disable, function() return keyBinds.noRecoil end, function(k) keyBinds.noRecoil=k end)
-)
-
--- Movement Category
-table.insert(categoryFrames.Movement,
-    createToggleRowFrame("Fly", true, function() return Fly_Enabled end, Fly_Enable, Fly_Disable, function() return keyBinds.fly end, function(k) keyBinds.fly=k; Fly_Bind=k end) -- Nadal aktualizuj Fly_Bind, jeśli jest używany gdzieś indziej
-)
-table.insert(categoryFrames.Movement,
-    createToggleRowFrame("Noclip", true, function() return Noclip_Enabled end, Noclip_Enable, Noclip_Disable, function() return keyBinds.fly end, function(k) keyBinds.Noclip=k; Noclip_Bind=k end) -- Nadal aktualizuj Noclip_Bind, jeśli jest używany gdzieś indziej
-)
-table.insert(categoryFrames.Movement,
-    createToggleRowFrame("Infinite Stamina", true, function() return isInfiniteStaminaEnabled end, InfiniteStamina_Enable, InfiniteStamina_Disable, function() return keyBinds.infiniteStamina end, function(k) keyBinds.infiniteStamina=k end)
-)
-
--- Visuals Category
-table.insert(categoryFrames.Visuals,
-    createToggleRowFrame("ESP (55 STUDS)", true, function() return ESP_Enabled end, ESP_Enable, ESP_Disable, function() return keyBinds.esp end, function(k) keyBinds.esp=k end)
-)
-table.insert(categoryFrames.Visuals,
-    createToggleRowFrame("Invisibility", true, _G.IsInvisEnabled, _G.Invis_Enable, _G.Invis_Disable, function() return keyBinds.invis end, function(k) keyBinds.invis=k end) -- Używa funkcji z _G
-)
-table.insert(categoryFrames.Visuals,
-    createToggleRowFrame("Safe ESP", true, function() return BredMakurz_Enabled end, BredMakurz_Enable, BredMakurz_Disable, function() return keyBinds.safeESP end, function(k) keyBinds.SafeESP=k end)
-)
-table.insert(categoryFrames.Visuals,
-    createToggleRowFrame("Fullbright", true, function() return FullBright_Enabled end, FullBright_Enable, FullBright_Disable, function() return keyBinds.FullBright end, function(k) keyBinds.FullBright=k end)
-)
-
-table.insert(categoryFrames.Farming,
-    createToggleRowFrame("Autofarm", true, function() return autofarmEnabled end, Autofarm_Enable, Autofarm_Disable, function() return keyBinds.fly end, function(k) keyBinds.Autofarm=k; Autofarm_Bind=k end) -- Nadal aktualizuj Autofarm_Bind, jeśli jest używany gdzieś indziej
-)
-
--- Misc Category
---table.insert(categoryFrames.Misc,
-    --createToggleRowFrame(" Anti AFK", true, function() return AntiAFK_Enabled_Dummy end, AntiAFK_Enable, AntiAFK_Disable, function() return keyBinds.antiAFK end, function(k) keyBinds.antiAFK=k end)
---)
-table.insert(categoryFrames.Misc,
-    createToggleRowFrame("Staff Detector", true, function() return AdminCheck_Enabled end, AdminCheck_Enable, AdminCheck_Disable, function() return keyBinds.adminCheck end, function(k) keyBinds.adminCheck=k end)
-)
-table.insert(categoryFrames.Misc,
-    createToggleRowFrame("Auto Pickup Money", true, function() return AutoPickupMoney_Enabled end, AutoPickupMoney_Enable, AutoPickupMoney_Disable, function() return keyBinds.autoPickupMoney end, function(k) keyBinds.autoPickupMoney=k end)
-)
-table.insert(categoryFrames.Misc,
-    createToggleRowFrame("No Fail Lockpick", true, function() return NoFailLockpick_Enabled end, NoFailLockpick_Enable, NoFailLockpick_Disable, function() return keyBinds.noFailLockpick end, function(k) keyBinds.noFailLockpick=k end)
-)
-table.insert(categoryFrames.Misc,
-    createToggleRowFrame("Auto Unlock Doors", true, function() return UnlockNearbyDoors_Enabled end, UnlockNearbyDoors_Enable, UnlockNearbyDoors_Disable, function() return keyBinds.unlockNearbyDoors end, function(k) keyBinds.unlockNearbyDoors=k end)
-)
-table.insert(categoryFrames.Misc,
-    createToggleRowFrame("Auto Open Doors", true, function() return OpenNearbyDoors_Enabled end, OpenNearbyDoors_Enable, OpenNearbyDoors_Disable, function() return keyBinds.openNearbyDoors end, function(k) keyBinds.openNearbyDoors=k end)
-)
-
--- Rage Category
-table.insert(categoryFrames.Rage,
-    createToggleRowFrame("Ragebot", true, function() return Ragebot_Enabled end, Ragebot_Enable, Ragebot_Disable, function() return keyBinds.ragebot end, function(k) keyBinds.ragebot=k end)
-)
-
 -------------------------------------------------------------------------------
---  8. Globalny Listener InputBegan dla Bindów (Poprawiona aktywacja v4)
+-- 2. METODY (Funkcje operujące na UI)
 -------------------------------------------------------------------------------
-UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then
-        return -- Ignoruj input, jeśli gra go przetworzyła (np. pisanie na czacie)
+
+--- Przełącza widoczną kategorię w interfejsie.
+function EQR_UI:SwitchCategory(categoryName)
+    local categoryButton = self.CategoryButtons[categoryName]
+    if not categoryButton or categoryButton == self.ActiveCategoryButton then
+        return
     end
+
+    -- Zresetuj poprzedni aktywny przycisk
+    if self.ActiveCategoryButton then
+        TweenService:Create(self.ActiveCategoryButton, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(20, 20, 25) }):Play()
+        self.ActiveCategoryButton.TextLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
+    end
+
+    -- Ustaw nowy aktywny przycisk
+    TweenService:Create(categoryButton, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(40, 40, 50) }):Play()
+    categoryButton.TextLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+    self.ActiveCategoryButton = categoryButton
+
+    -- Wyczyść contentFrame
+    for _, child in ipairs(contentFrame:GetChildren()) do
+        if child:IsA("Frame") and child.Name ~= "UIListLayout" and child.Name ~= "UICorner" then
+            child.Parent = nil
+        end
+    end
+
+    -- Dodaj ramki z nowej kategorii
+    if self.CategoryFrames[categoryName] then
+        for i, frame in ipairs(self.CategoryFrames[categoryName]) do
+            frame.Parent = contentFrame
+            frame.LayoutOrder = i
+        end
+        -- Zaktualizuj CanvasSize dla przewijania
+        local numItems = #self.CategoryFrames[categoryName]
+        local itemHeight = 35
+        local padding = contentLayout.Padding.Offset
+        contentFrame.CanvasSize = UDim2.new(0, 0, 0, numItems * itemHeight + (numItems > 0 and (numItems - 1) * padding or 0) + 10)
+    else
+        contentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    end
+end
+
+--- Obsługuje zdarzenie InputBegan dla keybindów.
+function EQR_UI:OnInputBegan(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
 
     local keyCode = input.KeyCode
-    if keyCode == Enum.KeyCode.Unknown then
-        return -- Ignoruj nieznane klawisze
-    end
+    if keyCode == Enum.KeyCode.Unknown then return end
 
     -- Obsługa ustawiania nowego binda
     if currentRowWaitingForKey then
-        local frame = currentRowWaitingForKey -- Ramka oczekująca
+        local frame = currentRowWaitingForKey
         local bindButton = bindButtonReferences[frame]
         local getKeyFn = keyBindGetters[frame]
         local setKeyFn = keyBindSetters[frame]
-        local frameData = rowFunctionData[frame] -- Pobierz zapisane funkcje dla tej ramki
+        local frameData = rowFunctionData[frame]
 
-        -- Upewnij się, że mamy wszystkie potrzebne referencje
         if bindButton and getKeyFn and setKeyFn and frameData then
             local oldKey = nil
             local successGet, resultGet = pcall(getKeyFn)
-            if successGet then
-                oldKey = resultGet
-            end
+            if successGet then oldKey = resultGet end
 
-            -- Usuń stary bind z tabeli activeBinds, jeśli istniał DLA TEJ FUNKCJI
             if oldKey and activeBinds[oldKey] and activeBinds[oldKey].frame == frame then
                 activeBinds[oldKey] = nil
             end
 
-            -- Sprawdź, czy nowy klawisz jest już przypisany do INNEJ funkcji
             if activeBinds[keyCode] and activeBinds[keyCode].frame ~= frame then
-                 local otherFrame = activeBinds[keyCode].frame
-                 local otherBindButton = bindButtonReferences[otherFrame]
-                 local otherSetKeyFn = keyBindSetters[otherFrame]
-                 if otherSetKeyFn then
-                     pcall(otherSetKeyFn, nil) -- Wyzeruj stary bind
-                 end
-                 if otherBindButton then
-                     otherBindButton.Text = "Bind" -- Zaktualizuj tekst starego przycisku
-                 end
-                 activeBinds[keyCode] = nil -- Usuń stary wpis z activeBinds
+                local otherFrame = activeBinds[keyCode].frame
+                local otherBindButton = bindButtonReferences[otherFrame]
+                local otherSetKeyFn = keyBindSetters[otherFrame]
+                if otherSetKeyFn then pcall(otherSetKeyFn, nil) end
+                if otherBindButton then otherBindButton.Text = "Bind" end
+                activeBinds[keyCode] = nil
             end
 
-            -- Ustaw nowy klawisz za pomocą settera
             pcall(setKeyFn, keyCode)
 
-            -- Znajdź przycisk toggle dla tej ramki
-            local toggleButton = nil
+            local toggleButton
             for _, child in ipairs(frame:GetChildren()) do if child:IsA("TextButton") and child ~= bindButton then toggleButton = child; break end end
 
             if toggleButton then
-                -- Zapisz pełną informację w activeBinds DLA NOWEGO KLAWISZA, używając danych z rowFunctionData
                 activeBinds[keyCode] = {
                     frame = frame,
                     toggleButton = toggleButton,
@@ -3669,56 +3603,137 @@ UserInputService.InputBegan:Connect(function(input, gp)
                     updateFn = frameData.updateFn
                 }
             else
-                 warn("Could not find toggle button for frame", frame.Name, "when binding key", keyCode.Name)
+                warn("Nie można znaleźć przycisku przełącznika dla ramki:", frame.Name)
             end
 
-            -- Zaktualizuj tekst przycisku bind
             bindButton.Text = "[" .. input.KeyCode.Name .. "]"
-            currentRowWaitingForKey = nil -- Zakończ przechwytywanie
-        else
-            if bindButton then bindButton.Text = "Bind" end -- Zresetuj tekst na wszelki wypadek
             currentRowWaitingForKey = nil
-            warn("Error during key capture - missing functions/references for frame:", frame and frame.Name or "Unknown")
+        else
+            if bindButton then bindButton.Text = "Bind" end
+            currentRowWaitingForKey = nil
+            warn("Błąd podczas przechwytywania klawisza - brakujące funkcje/referencje dla ramki:", frame and frame.Name or "Unknown")
         end
 
-    elseif activeBinds[keyCode] then -- Aktywacja przez bind
+    -- Obsługa aktywacji istniejącego binda
+    elseif activeBinds[keyCode] then
         local bindInfo = activeBinds[keyCode]
-        -- Sprawdź, czy kluczowe elementy istnieją w pobranych danych bindu
         if bindInfo.frame and bindInfo.isEnabledFn and bindInfo.onEnable and bindInfo.onDisable and bindInfo.updateFn and bindInfo.canToggle ~= nil then
-
-            if bindInfo.canToggle then -- Aktywuj tylko jeśli funkcja jest przełączalna
+            if bindInfo.canToggle then
                 local success, currentState = pcall(bindInfo.isEnabledFn)
                 if success then
                     if currentState then
-                        pcall(bindInfo.onDisable) -- Wywołaj Disable
+                        pcall(bindInfo.onDisable)
                     else
-                        pcall(bindInfo.onEnable) -- Wywołaj Enable
+                        pcall(bindInfo.onEnable)
                     end
-                    -- Odśwież przycisk po zmianie stanu
-                    task.wait() -- Daj chwilę na przetworzenie zmiany stanu flagi
-                    pcall(bindInfo.updateFn) -- Wywołaj funkcję aktualizującą przycisk
+                    task.wait()
+                    pcall(bindInfo.updateFn)
                 end
             end
         end
     end
-end)
+end
 
-PlayerGui.ChildAdded:Connect(function(Item)
-    if Item.Name == "LockpickGUI" then
-        -- Apply modification when the GUI appears, based on the current enabled state
-        ApplyLockpickModification()
+--- Inicjalizuje UI, tworzy wszystkie elementy i łączy zdarzenia.
+function EQR_UI:Initialize()
+    -- 6. Tworzenie Przycisków Kategorii
+    for i, categoryName in ipairs(self.Categories) do
+        self.CategoryFrames[categoryName] = {}
+
+        local catButton = Instance.new("TextButton")
+        catButton.Name = categoryName .. "Button"
+        catButton.Size = UDim2.new(1, -10, 0, 30)
+        catButton.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+        catButton.BorderSizePixel = 0
+        catButton.AutoButtonColor = false
+        catButton.LayoutOrder = i
+        catButton.Parent = sidebarFrame
+
+        local catCorner = Instance.new("UICorner")
+        catCorner.CornerRadius = UDim.new(0, 6)
+        catCorner.Parent = catButton
+
+        local catLabel = Instance.new("TextLabel")
+        catLabel.Name = "TextLabel"
+        catLabel.Size = UDim2.new(1, 0, 1, 0)
+        catLabel.BackgroundTransparency = 1
+        catLabel.Text = categoryName
+        catLabel.Font = Enum.Font.GothamSemibold
+        catLabel.TextSize = 14
+        catLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
+        catLabel.Parent = catButton
+
+        catButton.MouseEnter:Connect(function()
+            if catButton ~= self.ActiveCategoryButton then
+                TweenService:Create(catButton, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(30, 30, 35) }):Play()
+            end
+        end)
+        catButton.MouseLeave:Connect(function()
+            if catButton ~= self.ActiveCategoryButton then
+                TweenService:Create(catButton, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(20, 20, 25) }):Play()
+            end
+        end)
+        catButton.MouseButton1Click:Connect(function()
+            self:SwitchCategory(categoryName)
+        end)
+
+        self.CategoryButtons[categoryName] = catButton
     end
-end)
+
+    -- 7. Tworzenie Ramek dla Funkcji i Dodawanie do Kategorii
+    local k = self.KeyBinds -- Skrót dla łatwiejszego dostępu
+
+    -- Combat
+    table.insert(self.CategoryFrames.Combat, createToggleRowFrame("Melee Aura", true, function() return MeleeAura_Enabled end, MeleeAura_Enable, MeleeAura_Disable, function() return k.melee end, function(val) k.melee=val end))
+    table.insert(self.CategoryFrames.Combat, createToggleRowFrame("Aimbot", true, function() return AimBotSettings.Enabled end, Aimbot_Enable, Aimbot_Disable, function() return k.aimbot end, function(val) k.aimbot=val; AimBotSettings.Keybind=val end))
+    table.insert(self.CategoryFrames.Combat, createToggleRowFrame("No Recoil", true, function() return NoRecoil_Enabled end, NoRecoil_Enable, NoRecoil_Disable, function() return k.noRecoil end, function(val) k.noRecoil=val end))
+
+    -- Movement
+    table.insert(self.CategoryFrames.Movement, createToggleRowFrame("Fly", true, function() return Fly_Enabled end, Fly_Enable, Fly_Disable, function() return k.fly end, function(val) k.fly=val; Fly_Bind=val end))
+    table.insert(self.CategoryFrames.Movement, createToggleRowFrame("Noclip", true, function() return Noclip_Enabled end, Noclip_Enable, Noclip_Disable, function() return k.noclip end, function(val) k.noclip=val; Noclip_Bind=val end))
+    table.insert(self.CategoryFrames.Movement, createToggleRowFrame("Infinite Stamina", true, function() return isInfiniteStaminaEnabled end, InfiniteStamina_Enable, InfiniteStamina_Disable, function() return k.infiniteStamina end, function(val) k.infiniteStamina=val end))
+
+    -- Visuals
+    table.insert(self.CategoryFrames.Visuals, createToggleRowFrame("ESP (55 STUDS)", true, function() return ESP_Enabled end, ESP_Enable, ESP_Disable, function() return k.esp end, function(val) k.esp=val end))
+    table.insert(self.CategoryFrames.Visuals, createToggleRowFrame("Invisibility", true, _G.IsInvisEnabled, _G.Invis_Enable, _G.Invis_Disable, function() return k.invis end, function(val) k.invis=val end))
+    table.insert(self.CategoryFrames.Visuals, createToggleRowFrame("Safe ESP", true, function() return BredMakurz_Enabled end, BredMakurz_Enable, BredMakurz_Disable, function() return k.safeESP end, function(val) k.safeESP=val end))
+    table.insert(self.CategoryFrames.Visuals, createToggleRowFrame("FullBright", true, function() return FullBright_Enabled end, FullBright_Enable, FullBright_Disable, function() return k.FullBright end, function(val) k.FullBright=val; FulLBright_Bind=val end))
+    table.insert(self.CategoryFrames.Visuals, createToggleRowFrame("FOV", true, function() return Fov_Enabled end, Fov_Enable, Fov_Disable, function() return k.fov end, function(val) k.fov=val; fov=val end))
+
+    -- Farming
+    table.insert(self.CategoryFrames.Farming, createToggleRowFrame("Autofarm", true, function() return autofarmEnabled end, Autofarm_Enable, Autofarm_Disable, function() return k.autofarm end, function(val) k.autofarm=val; Autofarm_Bind=val end))
+    
+    -- Misc
+    --table.insert(self.CategoryFrames.Misc, createToggleRowFrame(" Anti AFK", true, function() return AntiAFK_Enabled_Dummy end, AntiAFK_Enable, AntiAFK_Disable, function() return k.antiAFK end, function(val) k.antiAFK=val end))
+    table.insert(self.CategoryFrames.Misc, createToggleRowFrame("Staff Detector", true, function() return AdminCheck_Enabled end, AdminCheck_Enable, AdminCheck_Disable, function() return k.adminCheck end, function(val) k.adminCheck=val end))
+    table.insert(self.CategoryFrames.Misc, createToggleRowFrame("Auto Pickup Money", true, function() return AutoPickupMoney_Enabled end, AutoPickupMoney_Enable, AutoPickupMoney_Disable, function() return k.autoPickupMoney end, function(val) k.autoPickupMoney=val end))
+    table.insert(self.CategoryFrames.Misc, createToggleRowFrame("No Fail Lockpick", true, function() return NoFailLockpick_Enabled end, NoFailLockpick_Enable, NoFailLockpick_Disable, function() return k.noFailLockpick end, function(val) k.noFailLockpick=val end))
+    table.insert(self.CategoryFrames.Misc, createToggleRowFrame("Auto Unlock Doors", true, function() return UnlockNearbyDoors_Enabled end, UnlockNearbyDoors_Enable, UnlockNearbyDoors_Disable, function() return k.unlockNearbyDoors end, function(val) k.unlockNearbyDoors=val end))
+    table.insert(self.CategoryFrames.Misc, createToggleRowFrame("Auto Open Doors", true, function() return OpenNearbyDoors_Enabled end, OpenNearbyDoors_Enable, OpenNearbyDoors_Disable, function() return k.openNearbyDoors end, function(val) k.openNearbyDoors=val end))
+
+    -- Rage
+    table.insert(self.CategoryFrames.Rage, createToggleRowFrame("Ragebot", true, function() return Ragebot_Enabled end, Ragebot_Enable, Ragebot_Disable, function() return k.ragebot end, function(val) k.ragebot=val end))
+    
+    -- 8. Podłączenie Globalnych Listenerów
+    UserInputService.InputBegan:Connect(function(...) self:OnInputBegan(...) end)
+    PlayerGui.ChildAdded:Connect(function(Item)
+        if Item.Name == "LockpickGUI" then
+            ApplyLockpickModification()
+        end
+    end)
+    
+    -- 9. Ustawienie Domyślnej Kategorii i Animacja Otwierania
+    self:SwitchCategory(self.DefaultCategory)
+    
+    mainFrame.Size = UDim2.new(0, 0, 0, 0)
+    local openTween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(0, 450, 0, 350) })
+    task.wait(0.1)
+    openTween:Play()
+    
+    print("EQR Hub (Refactored UI - Final) Loaded.")
+end
 
 -------------------------------------------------------------------------------
---  9. Ustawienie Domyślnej Kategorii i Animacja Otwierania
+-- 3. URUCHOMIENIE
 -------------------------------------------------------------------------------
--- Pokaż domyślną kategorię na starcie
-switchCategory(defaultCategory)
-
--- Animacja otwierania okna
-mainFrame.Size=UDim2.new(0,0,0,0)
-local openTween=TweenService:Create(mainFrame,TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=UDim2.new(0,450,0,350)})
-task.wait(0.1)
-openTween:Play()
-print("EQR Hub (Formatted UI - Original Logic - Final Fixes v5) Loaded.")
+EQR_UI:Initialize()
