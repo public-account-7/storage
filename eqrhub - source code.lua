@@ -905,27 +905,28 @@ local function FullBright_Disable()
 	Lighting.FogEnd = OriginalValues.FogEnd
 end
 
---============================ Camera FOV ============================--
+-- ============================ Camera FOV (Naprawione) ============================ --
 local Fov_Enabled = false
-local Fov_Value = 80  -- Ustaw domyślną wartość FOV, którą chcesz mieć po włączeniu
+local Fov_Value = 80
 local Camera = game.Workspace.Camera
 local Original_Fov = Camera.FieldOfView
 
 local function Fov_Enable()
-    if Fov_Enabled then
-        return
-    end
     Fov_Enabled = true
-    Camera.FieldOfView = Fov_Value
 end
 
 local function Fov_Disable()
-    if not Fov_Enabled then
-        return
-    end
     Fov_Enabled = false
     Camera.FieldOfView = Original_Fov
 end
+
+-- Pętla, która wymusza stałą wartość FOV
+game:GetService("RunService").RenderStepped:Connect(function()
+    if Fov_Enabled then
+        -- Wymusza FOV na 80, ignorując inne zmiany
+        Camera.FieldOfView = Fov_Value
+    end
+end)
 
 --============================ Noclip ============================--
 -- Serwisy Roblox
@@ -1617,14 +1618,8 @@ task.spawn(function()
 	while task.wait(5) do -- Check ping every 5 seconds
 		local ping = getPing()
 		if ping > pingThreshold then
-			if not isPingHigh then
-				print("Warning: High ping detected ("..ping.."ms). Pausing autofarm.")
-			end
 			isPingHigh = true
 		else
-			if isPingHigh then
-				print("Ping returned to normal ("..ping.."ms). Resuming autofarm.")
-			end
 			isPingHigh = false
 		end
 	end
@@ -2019,7 +2014,6 @@ local function Autofarm_Enable()
 	_G.ActivateShadow() -- Użycie nowej nazwy
 	Collector_Activate() -- Użycie nowej nazwy
 	--Noclip_Enable() -- Włącz Noclip
-	print("Autofarm ENABLED.") -- Dodatkowy log
 end
 
 -- Main function to disable the autofarm and invisibility
@@ -2030,7 +2024,6 @@ local function Autofarm_Disable()
 	_G.DeactivateShadow() -- Użycie nowej nazwy
 	Collector_Deactivate() -- Użycie nowej nazwy
 	--Noclip_Disable() -- Wyłącz Noclip
-	print("Autofarm DISABLED.") -- Dodatkowy log
 end
 
 -- NOWA, WZMOCNIONA LOGIKA RESPONSU
@@ -2065,7 +2058,6 @@ localPlayer.CharacterAdded:Connect(function(character)
 	
 	-- Wymuś ponowną aktywację, aby zsynchronizować stan ze skryptami
 	Autofarm_Enable()
-	print("Autofarm state RE-SYNCHRONIZED after respawn.")
 end)
 
 
@@ -2076,12 +2068,10 @@ local function teleportTo(targetPart)
 	local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
 	local hrp = char:WaitForChild("HumanoidRootPart", 10)
 	if not hrp then
-		print("Teleport failed: Could not find HumanoidRootPart.")
 		return false
 	end
 
 	if not (targetPart and targetPart:IsA("BasePart")) then
-		print("Teleport failed: Invalid targetPart.")
 		return false
 	end
 
@@ -2110,17 +2100,14 @@ local function teleportTo(targetPart)
 			local currentDistance = (hrp.Position - targetPos).Magnitude
 			if currentDistance > 5 then -- Jeśli gracz został odrzucony/przesunięty
 				isStable = false
-				print("INFO: Player after teleport not stable. Distance: " .. math.floor(currentDistance))
 				break -- Przerwij sprawdzanie, teleportacja nieudana
 			end
 		end
 
 		if isStable then
-			print("Autofarm: Teleport successful and position stable.")
 			success = true
 		else
 			attempts = attempts + 1
-			print("Autofarm: Position not stable after teleport, retrying  " .. attempts + 1)
 			wait(1) -- Odczekaj chwilę przed kolejną próbą
 		end
 	end
@@ -2231,7 +2218,7 @@ local function openSafe(safeModel)
 		wait(0.2) -- Lekko zwiększone opóźnienie dla stabilności
 	end
 	
-	wait(7) -- Zmniejszony czas oczekiwania po otwarciu sejfu
+	wait(8) -- Zmniejszony czas oczekiwania po otwarciu sejfu
 end
 
 
@@ -2256,11 +2243,9 @@ task.spawn(function()
 		
 		local crowbar = hasTool("Crowbar")
 		if not crowbar then
-			print("Autofarm: No crowbar. Looking for dealer...")
 			local dealer = findNearestDealer()
 			if dealer then
 				if teleportTo(dealer:WaitForChild("MainPart")) then
-					print("Autofarm: Teleported to dealer, buying crowbar...")
 					wait(1)
 					services.rs_rep.Events.BYZERSPROTEC:FireServer(true, "shop", dealer.MainPart, "IllegalStore")
 					wait(1)
@@ -2269,18 +2254,15 @@ task.spawn(function()
 					wait(20) -- Skrócony czas oczekiwania na finalizację zakupu
 					services.rs_rep.Events.BYZERSPROTEC:FireServer(false)
 				else
-					print("Autofarm: Teleportation to dealer failed. Trying again in a while.")
 					wait(5)
 				end
 			else
-				print("Autofarm: No dealers with crowbar in stock. Waiting...")
 				wait(10)
 			end
 		else -- Gracz MA łom
 			local target = findNearestTarget(ignoredSafes)
 			if target then
 				noTargetCounter = 0 -- Zresetuj licznik, bo znaleziono cel
-				print("Autofarm: Found target: " .. target.Name .. ". Teleporting...")
 				
 				if teleportTo(target:WaitForChild("MainPart")) then
 					-- Sprawdź, czy narzędzie nie jest już wyposażone
@@ -2295,20 +2277,16 @@ task.spawn(function()
 					end
 					
 					wait(1)
-					print("Autofarm: Breaking safe...")
 					openSafe(target)
 				else
 					table.insert(ignoredSafes, target)
-					print("Autofarm: Teleportation to target failed. Ignoring target temporarily.")
 					wait(0.5)
 				end
 			else -- Nie znaleziono żadnego celu
 				noTargetCounter = noTargetCounter + 1
-				print("Autofarm: No target found. Try number " .. noTargetCounter)
 				
 				-- Inteligentna logika czekania
 				if noTargetCounter >= 4 then
-					print("Autofarm: No target found in a while. Resetting ignore list and waiting 15 seconds for safes to reset.")
 					ignoredSafes = {} -- Wyczyść listę ignorowanych, może coś się odblokuje
 					noTargetCounter = 0 -- Zresetuj licznik
 					wait(15)
