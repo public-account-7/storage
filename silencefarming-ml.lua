@@ -10,7 +10,7 @@ local displayName = player.DisplayName
 local virtualUser = game:GetService("VirtualUser")
 local lighting = game:GetService("Lighting")
 
-
+--[[
 if getgenv().sbe ~= "sbevalid" then
 	player:Kick("Always use the Loader")
 	getgenv().sbe = ""
@@ -19,7 +19,7 @@ if getgenv().sbe ~= "sbevalid" then
 else
 	getgenv().sbe = ""
 end
-
+]]
 
 
 
