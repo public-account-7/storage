@@ -52,7 +52,7 @@ function Utils.greeting()
 	elseif hour >= 19 and hour < 22 then return "Good Evening " .. PlayerData.DisplayName
 	else return "Good Night " .. PlayerData.DisplayName end
 end
-
+--[[
 if getgenv().sbe ~= "sbevalid" then
 	PlayerData.Player:Kick("Always use the Loader")
 	getgenv().sbe = ""
@@ -60,7 +60,7 @@ if getgenv().sbe ~= "sbevalid" then
 	return
 else
 	getgenv().sbe = ""
-end
+end]]
 
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/ghjkl1312/bhkjhk/refs/heads/main/lib.luau", true))()
