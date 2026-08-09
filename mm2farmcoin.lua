@@ -94,7 +94,7 @@ local Char = LP.Character or LP.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 local Humanoid = Char:WaitForChild("Humanoid")
 
-local IsFarming = false
+local IsFarming = true
 local FarmingConnection = nil
 local TimerThread = nil
 
@@ -133,92 +133,78 @@ local function MoveToCoin(hp)
     t.Completed:Wait()
 end
 
-local function StartFarming()
-    if FarmingConnection then return end
+local CoinsCollected = 0
+local StartTime = os.time()
 
-    local CoinsCollected = 0
-    local StartTime = os.time()
-    MainGui["3"].Text = "0"
-    MainGui["4"].Text = "0"
-    MainGui["5"].Text = "00:00"
+MainGui["3"].Text = "0"
+MainGui["4"].Text = "0"
+MainGui["5"].Text = "00:00"
 
-    TimerThread = task.spawn(function()
-        while IsFarming do
-            local elapsed = os.time() - StartTime
-            local minutes = string.format("%02d", math.floor(elapsed / 60))
-            local seconds = string.format("%02d", elapsed % 60)
-            MainGui["5"].Text = minutes .. ":" .. seconds
-            task.wait(1)
-        end
-    end)
+TimerThread = task.spawn(function()
+    while IsFarming do
+        local elapsed = os.time() - StartTime
+        local minutes = string.format("%02d", math.floor(elapsed / 60))
+        local seconds = string.format("%02d", elapsed % 60)
 
-    FarmingConnection = task.spawn(function()
-        while IsFarming do
-            local target = GetNearest()
-            if target and LP:GetAttribute("Alive") then
-                MoveToCoin(target)
+        MainGui["5"].Text = minutes .. ":" .. seconds
 
-                local v = target:FindFirstChild("CoinVisual")
-                local collectedByUs = false
+        task.wait(1)
+    end
+end)
 
-                if v and not v:GetAttribute("Collected") then
-                    while v and not v:GetAttribute("Collected") and v.Parent and IsFarming do
-                        if not LP:GetAttribute("Alive") then break end
-                        local n = GetNearest()
-                        if n and n ~= target then
-                            break
-                        end
-                        task.wait()
+FarmingConnection = task.spawn(function()
+    while IsFarming do
+        local target = GetNearest()
+
+        if target and LP:GetAttribute("Alive") then
+            MoveToCoin(target)
+
+            local v = target:FindFirstChild("CoinVisual")
+            local collectedByUs = false
+
+            if v and not v:GetAttribute("Collected") then
+                while v
+                    and not v:GetAttribute("Collected")
+                    and v.Parent
+                    and IsFarming do
+
+                    if not LP:GetAttribute("Alive") then
+                        break
                     end
 
-                    if not v or not v.Parent or v:GetAttribute("Collected") then
-                        collectedByUs = true
+                    local n = GetNearest()
+
+                    if n and n ~= target then
+                        break
                     end
+
+                    task.wait()
                 end
 
-                if collectedByUs then
-                    CoinsCollected = CoinsCollected + 1
-                    MainGui["3"].Text = tostring(CoinsCollected)
-                end
+                if not v
+                    or not v.Parent
+                    or v:GetAttribute("Collected") then
 
-                local elapsed = os.time() - StartTime
-                if elapsed > 0 then
-                    local cph = math.floor((CoinsCollected / elapsed) * 3600)
-                    MainGui["4"].Text = tostring(cph)
-                else
-                    MainGui["4"].Text = "0"
+                    collectedByUs = true
                 end
-            else
-                task.wait(0.5)
             end
+
+            if collectedByUs then
+                CoinsCollected += 1
+                MainGui["3"].Text = tostring(CoinsCollected)
+            end
+
+            local elapsed = os.time() - StartTime
+
+            if elapsed > 0 then
+                local cph = math.floor((CoinsCollected / elapsed) * 3600)
+                MainGui["4"].Text = tostring(cph)
+            else
+                MainGui["4"].Text = "0"
+            end
+        else
+            task.wait(0.5)
         end
-    end)
-end
-
-local function StopFarming()
-    IsFarming = false
-    if FarmingConnection then
-        FarmingConnection = nil
-    end
-    if TimerThread then
-        TimerThread = nil
-    end
-end
-
-local function ToggleFarming()
-    IsFarming = not IsFarming
-    if IsFarming then
-        StartFarming()
-    else
-        StopFarming()
-    end
-end
-
-ToggleFarming()
-
-MainGui["1"].AncestryChanged:Connect(function()
-    if not MainGui["1"].Parent then
-        StopFarming()
     end
 end)
 
